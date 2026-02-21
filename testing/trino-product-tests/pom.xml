@@ -72,11 +72,6 @@
         </dependency>
 
         <dependency>
-            <groupId>io.github.jeschkies</groupId>
-            <artifactId>loki-client</artifactId>
-        </dependency>
-
-        <dependency>
             <groupId>io.trino</groupId>
             <artifactId>trino-hive</artifactId>
         </dependency>
@@ -334,6 +329,12 @@
         <dependency>
             <groupId>io.airlift</groupId>
             <artifactId>testing</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>io.github.jeschkies</groupId>
+            <artifactId>loki-client</artifactId>
             <scope>test</scope>
         </dependency>
 
