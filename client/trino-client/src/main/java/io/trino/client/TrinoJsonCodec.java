@@ -21,6 +21,7 @@ import com.fasterxml.jackson.core.StreamReadFeature;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.MapperFeature;
+import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 
@@ -82,6 +83,13 @@ public class TrinoJsonCodec<T>
     public static <T> TrinoJsonCodec<T> jsonCodec(Class<T> type)
     {
         return new TrinoJsonCodec<>(JSON_MAPPER_SUPPLIER.get(), type);
+    }
+
+    static <T> TrinoJsonCodec<T> jsonCodec(Class<T> type, Module module)
+    {
+        JsonMapper mapper = JSON_MAPPER_SUPPLIER.get();
+        mapper.registerModule(module);
+        return new TrinoJsonCodec<>(mapper, type);
     }
 
     private final JsonMapper mapper;
