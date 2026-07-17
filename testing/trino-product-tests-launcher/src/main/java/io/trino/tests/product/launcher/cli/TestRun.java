@@ -54,6 +54,7 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 
+import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static io.trino.testing.SystemEnvironmentUtils.isEnvSet;
@@ -108,7 +109,7 @@ public final class TestRun
     {
         private static final String DEFAULT_VALUE = "(default: ${DEFAULT-VALUE})";
 
-        @Option(names = "--test-jar", paramLabel = "<jar>", description = "Path to test JAR " + DEFAULT_VALUE, defaultValue = "${product-tests.module}/target/${product-tests.name}-${project.version}-executable.jar")
+        @Option(names = "--test-jar", paramLabel = "<jar>", description = "Path to test JAR; dependencies are expected in the 'lib' directory next to it " + DEFAULT_VALUE, defaultValue = "${product-tests.module}/target/${product-tests.name}-${project.version}.jar")
         public File testJar;
 
         @Option(names = "--cli-executable", paramLabel = "<jar>", description = "Path to CLI executable " + DEFAULT_VALUE, defaultValue = "${cli.bin}")
@@ -154,6 +155,7 @@ public final class TestRun
             implements Callable<Integer>
     {
         private static final String CONTAINER_REPORTS_DIR = "/docker/test-reports";
+        private static final String TESTS_MAIN_CLASS = "io.trino.tests.product.TemptoProductTestRunner";
         private final EnvironmentFactory environmentFactory;
         private final boolean debug;
         private final boolean debugSuspend;
@@ -349,8 +351,9 @@ public final class TestRun
 
                 // Install Java distribution if necessary
                 jdkProvider.applyTo(container)
-                        // the test jar is hundreds MB and file system bind is much more efficient
+                        // the test classpath is hundreds MB and file system bind is much more efficient
                         .withFileSystemBind(testJar.getPath(), "/docker/test.jar", READ_ONLY)
+                        .withFileSystemBind(testLibDirectory().getPath(), "/docker/test-lib", READ_ONLY)
                         .withFileSystemBind(cliJar.getPath(), "/docker/trino-cli", READ_ONLY)
                         .withCopyFileToContainer(forClasspathResource("docker/trino-product-tests/common/standard/set-trino-cli.sh"), "/etc/profile.d/set-trino-cli.sh")
                         .withCommand(ImmutableList.<String>builder()
@@ -365,8 +368,9 @@ public final class TestRun
                                         "-DProgressLoggingListener.enabled=false")
                                 .addAll(temptoJavaOptions)
                                 .add(
-                                        "-jar",
-                                        "/docker/test.jar",
+                                        "-cp",
+                                        "/docker/test.jar:/docker/test-lib/*",
+                                        TESTS_MAIN_CLASS,
                                         "--config",
                                         String.join(",", ImmutableList.<String>builder()
                                                 .add("tempto-configuration.yaml") // this comes from classpath
@@ -383,6 +387,13 @@ public final class TestRun
             builder.setAttached(attach);
 
             return builder.build(getStandardListeners(logsDirBase));
+        }
+
+        private File testLibDirectory()
+        {
+            File libDirectory = new File(testJar.getParentFile(), "lib");
+            checkState(libDirectory.isDirectory(), "Test dependencies directory %s does not exist. Build the trino-product-tests module to populate it.", libDirectory);
+            return libDirectory;
         }
 
         private static Iterable<? extends String> reportsDirOptions(Path path)

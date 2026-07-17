@@ -99,7 +99,7 @@ public class SuiteDescribe
         @Option(names = "--suite", paramLabel = "<suite>", description = "Name of the suite(s) to run (comma separated)", required = true, split = ",")
         public List<String> suites;
 
-        @Option(names = "--test-jar", paramLabel = "<jar>", description = "Path to test JAR " + DEFAULT_VALUE, defaultValue = "${product-tests.module}/target/${product-tests.name}-${project.version}-executable.jar")
+        @Option(names = "--test-jar", paramLabel = "<jar>", description = "Path to test JAR; dependencies are expected in the 'lib' directory next to it " + DEFAULT_VALUE, defaultValue = "${product-tests.module}/target/${product-tests.name}-${project.version}.jar")
         public File testJar;
 
         @Option(names = "--format", description = "Table output format: ${COMPLETION-CANDIDATES} " + DEFAULT_VALUE, defaultValue = "TEXT")
